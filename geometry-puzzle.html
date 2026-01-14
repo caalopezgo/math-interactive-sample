@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puzzle Interactivo de Geometría</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            color: #333;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            max-width: 1000px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 0.5rem;
+            font-size: 2rem;
+            color: #667eea;
+        }
+        
+        .subtitle {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #666;
+            font-size: 0.95rem;
+        }
+        
+        .canvas-container {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            border-radius: 5px;
+            cursor: crosshair;
+        }
+        
+        .controls-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .info-panel, .challenge-panel {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+        }
+        
+        .info-panel h3, .challenge-panel h3 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .measurement {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        
+        .measurement:last-child {
+            border-bottom: none;
+        }
+        
+        .measurement-label {
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .measurement-value {
+            font-family: 'Courier New', monospace;
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .triangle-type {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: rgba(102, 126, 234, 0.15);
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .challenge-status {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .challenge-status.pending {
+            background: rgba(255, 193, 7, 0.2);
+            color: #f57c00;
+        }
+        
+        .challenge-status.completed {
+            background: rgba(76, 175, 80, 0.2);
+            color: #2e7d32;
+            animation: pulse 0.5s ease-in-out;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .mode-selector {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            justify-content: center;
+        }
+        
+        .mode-btn {
+            padding: 0.75rem 2rem;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .mode-btn:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+        
+        .mode-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #d0d0d0;
+            transform: translateY(-2px);
+        }
+        
+        .instructions {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(102, 126, 234, 0.05);
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .instructions h4 {
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+        
+        .instructions ul {
+            margin-left: 1.5rem;
+            color: #666;
+        }
+        
+        .instructions li {
+            margin: 0.25rem 0;
+        }
+        
+        @media (max-width: 768px) {
+            .controls-panel {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔺 Puzzle Interactivo de Geometría</h1>
+        <p class="subtitle">Arrastra los puntos para construir triángulos y explora sus propiedades</p>
+        
+        <div class="mode-selector">
+            <button class="mode-btn active" id="freeMode">Modo Libre</button>
+            <button class="mode-btn" id="challengeMode">Modo Desafío</button>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="canvas" width="800" height="500"></canvas>
+        </div>
+        
+        <div class="controls-panel">
+            <div class="info-panel">
+                <h3>📐 Medidas del Triángulo</h3>
+                <div class="measurement">
+                    <span class="measurement-label">Lado AB:</span>
+                    <span class="measurement-value" id="sideAB">-</span>
+                </div>
+                <div class="measurement">
+                    <span class="measurement-label">Lado BC:</span>
+                    <span class="measurement-value" id="sideBC">-</span>
+                </div>
+                <div class="measurement">
+                    <span class="measurement-label">Lado CA:</span>
+                    <span class="measurement-value" id="sideCA">-</span>
+                </div>
+                <div class="measurement">
+                    <span class="measurement-label">Ángulo A:</span>
+                    <span class="measurement-value" id="angleA">-</span>
+                </div>
+                <div class="measurement">
+                    <span class="measurement-label">Ángulo B:</span>
+                    <span class="measurement-value" id="angleB">-</span>
+                </div>
+                <div class="measurement">
+                    <span class="measurement-label">Ángulo C:</span>
+                    <span class="measurement-value" id="angleC">-</span>
+                </div>
+                <div class="measurement">
+                    <span class="measurement-label">Área:</span>
+                    <span class="measurement-value" id="area">-</span>
+                </div>
+                <div class="triangle-type" id="triangleType">-</div>
+            </div>
+            
+            <div class="challenge-panel">
+                <h3>🎯 Desafío Actual</h3>
+                <div id="challengeDescription">Selecciona "Modo Desafío" para comenzar</div>
+                <div class="challenge-status pending" id="challengeStatus">Esperando...</div>
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            <button class="btn-primary" id="resetBtn">🔄 Reiniciar</button>
+            <button class="btn-secondary" id="exampleBtn">📝 Ejemplo</button>
+        </div>
+        
+        <div class="instructions">
+            <h4>💡 Instrucciones</h4>
+            <ul>
+                <li>Haz click y arrastra los puntos rojos para mover los vértices del triángulo</li>
+                <li>Las medidas se actualizan en tiempo real mientras arrastras</li>
+                <li>En Modo Desafío, intenta completar los objetivos propuestos</li>
+                <li>Los puntos se resaltan cuando pasas el mouse sobre ellos</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CLASES Y ESTRUCTURAS DE DATOS
+        // ============================================
+        
+        class Point {
+            constructor(x, y, label = '') {
+                this.x = x;
+                this.y = y;
+                this.label = label;
+                this.radius = 8;
+                this.isDragging = false;
+                this.isHovered = false;
+            }
+            
+            contains(mx, my) {
+                const dx = mx - this.x;
+                const dy = my - this.y;
+                return dx * dx + dy * dy <= this.radius * this.radius;
+            }
+            
+            draw(ctx) {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                
+                if (this.isHovered || this.isDragging) {
+                    ctx.fillStyle = '#ff6b6b';
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 3;
+                } else {
+                    ctx.fillStyle = '#e74c3c';
+                    ctx.strokeStyle = '#c0392b';
+                    ctx.lineWidth = 2;
+                }
+                
+                ctx.fill();
+                ctx.stroke();
+                
+                // Etiqueta
+                if (this.label) {
+                    ctx.fillStyle = '#333';
+                    ctx.font = 'bold 14px Inter';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(this.label, this.x, this.y - this.radius - 10);
+                }
+            }
+        }
+        
+        class Triangle {
+            constructor(p1, p2, p3) {
+                this.p1 = p1;
+                this.p2 = p2;
+                this.p3 = p3;
+            }
+            
+            // Distancia entre dos puntos
+            static distance(p1, p2) {
+                const dx = p2.x - p1.x;
+                const dy = p2.y - p1.y;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+            
+            // Ángulo en un vértice (en grados)
+            static angle(vertex, p1, p2) {
+                const v1x = p1.x - vertex.x;
+                const v1y = p1.y - vertex.y;
+                const v2x = p2.x - vertex.x;
+                const v2y = p2.y - vertex.y;
+                
+                const dot = v1x * v2x + v1y * v2y;
+                const mag1 = Math.sqrt(v1x * v1x + v1y * v1y);
+                const mag2 = Math.sqrt(v2x * v2x + v2y * v2y);
+                
+                if (mag1 === 0 || mag2 === 0) return 0;
+                
+                const cosAngle = dot / (mag1 * mag2);
+                const angle = Math.acos(Math.max(-1, Math.min(1, cosAngle)));
+                return (angle * 180) / Math.PI;
+            }
+            
+            // Área usando fórmula del determinante
+            static area(p1, p2, p3) {
+                return Math.abs(
+                    (p1.x * (p2.y - p3.y) + 
+                     p2.x * (p3.y - p1.y) + 
+                     p3.x * (p1.y - p2.y)) / 2
+                );
+            }
+            
+            // Tipo de triángulo
+            static type(p1, p2, p3) {
+                const a = Triangle.distance(p2, p3);
+                const b = Triangle.distance(p1, p3);
+                const c = Triangle.distance(p1, p2);
+                
+                const epsilon = 0.1; // Tolerancia para comparaciones
+                
+                // Verificar si es válido
+                if (a + b <= c + epsilon || a + c <= b + epsilon || b + c <= a + epsilon) {
+                    return 'Inválido';
+                }
+                
+                // Verificar ángulo recto (90°)
+                const angleA = Triangle.angle(p1, p2, p3);
+                const angleB = Triangle.angle(p2, p1, p3);
+                const angleC = Triangle.angle(p3, p1, p2);
+                
+                const isRight = Math.abs(angleA - 90) < 2 || 
+                               Math.abs(angleB - 90) < 2 || 
+                               Math.abs(angleC - 90) < 2;
+                
+                // Verificar lados iguales
+                const sidesEqual = Math.abs(a - b) < epsilon && 
+                                  Math.abs(b - c) < epsilon;
+                const twoSidesEqual = Math.abs(a - b) < epsilon || 
+                                     Math.abs(b - c) < epsilon || 
+                                     Math.abs(a - c) < epsilon;
+                
+                if (sidesEqual) {
+                    return isRight ? 'Equilátero Rectángulo (imposible)' : 'Equilátero';
+                } else if (twoSidesEqual) {
+                    return isRight ? 'Isósceles Rectángulo' : 'Isósceles';
+                } else if (isRight) {
+                    return 'Rectángulo';
+                } else {
+                    return 'Escaleno';
+                }
+            }
+            
+            getSideLengths() {
+                return {
+                    AB: Triangle.distance(this.p1, this.p2),
+                    BC: Triangle.distance(this.p2, this.p3),
+                    CA: Triangle.distance(this.p3, this.p1)
+                };
+            }
+            
+            getAngles() {
+                return {
+                    A: Triangle.angle(this.p1, this.p2, this.p3),
+                    B: Triangle.angle(this.p2, this.p1, this.p3),
+                    C: Triangle.angle(this.p3, this.p1, this.p2)
+                };
+            }
+            
+            getArea() {
+                return Triangle.area(this.p1, this.p2, this.p3);
+            }
+            
+            getType() {
+                return Triangle.type(this.p1, this.p2, this.p3);
+            }
+        }
+        
+        // ============================================
+        // GESTIÓN DE DESAFÍOS
+        // ============================================
+        
+        class ChallengeManager {
+            constructor() {
+                this.challenges = [
+                    {
+                        id: 'equilateral',
+                        name: 'Triángulo Equilátero',
+                        description: 'Crea un triángulo con los tres lados iguales',
+                        check: (triangle) => triangle.getType() === 'Equilátero'
+                    },
+                    {
+                        id: 'isosceles',
+                        name: 'Triángulo Isósceles',
+                        description: 'Crea un triángulo con dos lados iguales',
+                        check: (triangle) => triangle.getType() === 'Isósceles'
+                    },
+                    {
+                        id: 'right',
+                        name: 'Triángulo Rectángulo',
+                        description: 'Crea un triángulo con un ángulo de 90°',
+                        check: (triangle) => triangle.getType() === 'Rectángulo'
+                    },
+                    {
+                        id: 'right-isosceles',
+                        name: 'Triángulo Rectángulo Isósceles',
+                        description: 'Crea un triángulo rectángulo con dos lados iguales',
+                        check: (triangle) => triangle.getType() === 'Isósceles Rectángulo'
+                    },
+                    {
+                        id: 'scalene',
+                        name: 'Triángulo Escaleno',
+                        description: 'Crea un triángulo con los tres lados diferentes',
+                        check: (triangle) => triangle.getType() === 'Escaleno'
+                    }
+                ];
+                
+                this.currentChallengeIndex = 0;
+                this.completedChallenges = new Set();
+            }
+            
+            getCurrentChallenge() {
+                return this.challenges[this.currentChallengeIndex];
+            }
+            
+            checkChallenge(triangle) {
+                const challenge = this.getCurrentChallenge();
+                if (challenge && challenge.check(triangle)) {
+                    this.completedChallenges.add(challenge.id);
+                    return true;
+                }
+                return false;
+            }
+            
+            nextChallenge() {
+                if (this.currentChallengeIndex < this.challenges.length - 1) {
+                    this.currentChallengeIndex++;
+                } else {
+                    this.currentChallengeIndex = 0;
+                }
+            }
+        }
+        
+        // ============================================
+        // APLICACIÓN PRINCIPAL
+        // ============================================
+        
+        class GeometryApp {
+            constructor() {
+                this.canvas = document.getElementById('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.isFreeMode = true;
+                this.challengeManager = new ChallengeManager();
+                
+                // Ajustar tamaño del canvas
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+                
+                // Inicializar puntos
+                this.initializePoints();
+                this.triangle = new Triangle(this.points[0], this.points[1], this.points[2]);
+                
+                // Estado de arrastre
+                this.draggedPoint = null;
+                this.mouseX = 0;
+                this.mouseY = 0;
+                
+                // Configurar eventos
+                this.setupEventListeners();
+                
+                // Iniciar loop de renderizado
+                this.render();
+            }
+            
+            resizeCanvas() {
+                const container = this.canvas.parentElement;
+                this.canvas.width = container.clientWidth - 32;
+                this.canvas.height = 500;
+                this.initializePoints();
+            }
+            
+            initializePoints() {
+                const centerX = this.canvas.width / 2;
+                const centerY = this.canvas.height / 2;
+                
+                this.points = [
+                    new Point(centerX - 100, centerY - 50, 'A'),
+                    new Point(centerX + 100, centerY - 50, 'B'),
+                    new Point(centerX, centerY + 100, 'C')
+                ];
+            }
+            
+            setupEventListeners() {
+                // Eventos del canvas
+                this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+                this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                this.canvas.addEventListener('mouseup', () => this.handleMouseUp());
+                this.canvas.addEventListener('mouseleave', () => this.handleMouseUp());
+                
+                // Botones de modo
+                document.getElementById('freeMode').addEventListener('click', () => {
+                    this.isFreeMode = true;
+                    document.getElementById('freeMode').classList.add('active');
+                    document.getElementById('challengeMode').classList.remove('active');
+                    this.updateChallengeUI();
+                });
+                
+                document.getElementById('challengeMode').addEventListener('click', () => {
+                    this.isFreeMode = false;
+                    document.getElementById('challengeMode').classList.add('active');
+                    document.getElementById('freeMode').classList.remove('active');
+                    this.updateChallengeUI();
+                });
+                
+                // Botones de acción
+                document.getElementById('resetBtn').addEventListener('click', () => {
+                    this.initializePoints();
+                    this.triangle = new Triangle(this.points[0], this.points[1], this.points[2]);
+                });
+                
+                document.getElementById('exampleBtn').addEventListener('click', () => {
+                    this.createExampleTriangle();
+                });
+            }
+            
+            getMousePos(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                return {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                };
+            }
+            
+            handleMouseDown(e) {
+                const pos = this.getMousePos(e);
+                for (let point of this.points) {
+                    if (point.contains(pos.x, pos.y)) {
+                        this.draggedPoint = point;
+                        point.isDragging = true;
+                        break;
+                    }
+                }
+            }
+            
+            handleMouseMove(e) {
+                const pos = this.getMousePos(e);
+                this.mouseX = pos.x;
+                this.mouseY = pos.y;
+                
+                // Actualizar hover
+                let hovered = false;
+                for (let point of this.points) {
+                    point.isHovered = point.contains(pos.x, pos.y);
+                    if (point.isHovered) hovered = true;
+                }
+                this.canvas.style.cursor = hovered ? 'grab' : 'crosshair';
+                
+                // Actualizar posición si se está arrastrando
+                if (this.draggedPoint) {
+                    this.draggedPoint.x = pos.x;
+                    this.draggedPoint.y = pos.y;
+                    this.canvas.style.cursor = 'grabbing';
+                    
+                    // Mantener dentro del canvas
+                    this.draggedPoint.x = Math.max(20, Math.min(this.canvas.width - 20, this.draggedPoint.x));
+                    this.draggedPoint.y = Math.max(30, Math.min(this.canvas.height - 20, this.draggedPoint.y));
+                }
+            }
+            
+            handleMouseUp() {
+                if (this.draggedPoint) {
+                    this.draggedPoint.isDragging = false;
+                    this.draggedPoint = null;
+                }
+            }
+            
+            createExampleTriangle() {
+                const centerX = this.canvas.width / 2;
+                const centerY = this.canvas.height / 2;
+                const size = 120;
+                
+                // Crear triángulo equilátero como ejemplo
+                this.points[0].x = centerX;
+                this.points[0].y = centerY - size;
+                this.points[1].x = centerX - size * Math.cos(Math.PI / 6);
+                this.points[1].y = centerY + size * Math.sin(Math.PI / 6);
+                this.points[2].x = centerX + size * Math.cos(Math.PI / 6);
+                this.points[2].y = centerY + size * Math.sin(Math.PI / 6);
+            }
+            
+            drawAngleArc(ctx, vertex, p1, p2, radius = 25) {
+                const v1x = p1.x - vertex.x;
+                const v1y = p1.y - vertex.y;
+                const v2x = p2.x - vertex.x;
+                const v2y = p2.y - vertex.y;
+                
+                const angle1 = Math.atan2(v1y, v1x);
+                const angle2 = Math.atan2(v2y, v2x);
+                
+                ctx.beginPath();
+                ctx.arc(vertex.x, vertex.y, radius, angle1, angle2, false);
+                ctx.strokeStyle = '#667eea';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+            
+            render() {
+                // Limpiar canvas
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Actualizar triángulo
+                this.triangle = new Triangle(this.points[0], this.points[1], this.points[2]);
+                
+                // Dibujar triángulo
+                this.ctx.beginPath();
+                this.ctx.moveTo(this.points[0].x, this.points[0].y);
+                this.ctx.lineTo(this.points[1].x, this.points[1].y);
+                this.ctx.lineTo(this.points[2].x, this.points[2].y);
+                this.ctx.closePath();
+                
+                // Relleno semi-transparente
+                this.ctx.fillStyle = 'rgba(102, 126, 234, 0.1)';
+                this.ctx.fill();
+                
+                // Borde
+                this.ctx.strokeStyle = '#667eea';
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+                
+                // Dibujar arcos de ángulos
+                this.drawAngleArc(this.ctx, this.points[0], this.points[1], this.points[2]);
+                this.drawAngleArc(this.ctx, this.points[1], this.points[0], this.points[2]);
+                this.drawAngleArc(this.ctx, this.points[2], this.points[0], this.points[1]);
+                
+                // Dibujar puntos
+                for (let point of this.points) {
+                    point.draw(this.ctx);
+                }
+                
+                // Actualizar UI
+                this.updateMeasurements();
+                this.updateChallengeUI();
+                
+                // Continuar animación
+                requestAnimationFrame(() => this.render());
+            }
+            
+            updateMeasurements() {
+                const sides = this.triangle.getSideLengths();
+                const angles = this.triangle.getAngles();
+                const area = this.triangle.getArea();
+                const type = this.triangle.getType();
+                
+                document.getElementById('sideAB').textContent = sides.AB.toFixed(2) + ' px';
+                document.getElementById('sideBC').textContent = sides.BC.toFixed(2) + ' px';
+                document.getElementById('sideCA').textContent = sides.CA.toFixed(2) + ' px';
+                document.getElementById('angleA').textContent = angles.A.toFixed(1) + '°';
+                document.getElementById('angleB').textContent = angles.B.toFixed(1) + '°';
+                document.getElementById('angleC').textContent = angles.C.toFixed(1) + '°';
+                document.getElementById('area').textContent = area.toFixed(2) + ' px²';
+                document.getElementById('triangleType').textContent = 'Tipo: ' + type;
+            }
+            
+            updateChallengeUI() {
+                const challengeDesc = document.getElementById('challengeDescription');
+                const challengeStatus = document.getElementById('challengeStatus');
+                
+                if (this.isFreeMode) {
+                    challengeDesc.textContent = 'Selecciona "Modo Desafío" para comenzar';
+                    challengeStatus.textContent = 'Esperando...';
+                    challengeStatus.className = 'challenge-status pending';
+                } else {
+                    const challenge = this.challengeManager.getCurrentChallenge();
+                    challengeDesc.textContent = challenge.description;
+                    
+                    const isCompleted = this.challengeManager.checkChallenge(this.triangle);
+                    if (isCompleted) {
+                        challengeStatus.textContent = '✓ ¡Desafío Completado!';
+                        challengeStatus.className = 'challenge-status completed';
+                        
+                        // Avanzar al siguiente desafío después de un momento
+                        setTimeout(() => {
+                            this.challengeManager.nextChallenge();
+                        }, 2000);
+                    } else {
+                        challengeStatus.textContent = 'En progreso...';
+                        challengeStatus.className = 'challenge-status pending';
+                    }
+                }
+            }
+        }
+        
+        // Inicializar aplicación cuando se carga la página
+        window.addEventListener('DOMContentLoaded', () => {
+            new GeometryApp();
+        });
+    </script>
+</body>
+</html>
+
+
+

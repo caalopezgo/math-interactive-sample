@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador de Derivadas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #134e5e 0%, #71b280 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1.5rem;
+            color: #fff;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 1.5rem;
+            max-width: 1100px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            color: #333;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 0.5rem;
+            font-size: 2rem;
+            background: linear-gradient(135deg, #134e5e, #71b280);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #666;
+            font-size: 0.95rem;
+        }
+        
+        .function-selector {
+            display: flex;
+            gap: 0.6rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+        
+        .func-btn {
+            padding: 0.6rem 1.2rem;
+            border: 2px solid rgba(19, 78, 94, 0.3);
+            background: rgba(19, 78, 94, 0.1);
+            color: #134e5e;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .func-btn:hover {
+            background: rgba(19, 78, 94, 0.2);
+            border-color: rgba(19, 78, 94, 0.5);
+        }
+        
+        .func-btn.active {
+            background: linear-gradient(135deg, #134e5e, #71b280);
+            color: #fff;
+            border-color: transparent;
+        }
+        
+        .canvas-container {
+            background: #fff;
+            border-radius: 15px;
+            padding: 0;
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            border-radius: 15px;
+            cursor: ew-resize;
+        }
+        
+        .info-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .info-box {
+            background: rgba(19, 78, 94, 0.1);
+            padding: 1.2rem;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(19, 78, 94, 0.2);
+        }
+        
+        .info-box h4 {
+            color: #134e5e;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .info-value {
+            font-family: 'Courier New', monospace;
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #134e5e;
+        }
+        
+        .info-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 0.3rem;
+        }
+        
+        .controls-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .control-group {
+            background: rgba(19, 78, 94, 0.05);
+            padding: 1.2rem;
+            border-radius: 12px;
+            border: 1px solid rgba(19, 78, 94, 0.1);
+        }
+        
+        .control-group h3 {
+            color: #134e5e;
+            margin-bottom: 0.8rem;
+            font-size: 1rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 5px;
+            background: rgba(19, 78, 94, 0.2);
+            outline: none;
+            -webkit-appearance: none;
+            margin-bottom: 0.5rem;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #134e5e, #71b280);
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(19, 78, 94, 0.4);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #134e5e, #71b280);
+            cursor: pointer;
+            border: none;
+        }
+        
+        .value-display {
+            font-family: 'Courier New', monospace;
+            color: #134e5e;
+            font-size: 0.9rem;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #134e5e;
+        }
+        
+        .checkbox-group label {
+            margin: 0;
+            cursor: pointer;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 0.8rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+        
+        button {
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 25px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #134e5e, #71b280);
+            color: #fff;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(19, 78, 94, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(19, 78, 94, 0.1);
+            color: #134e5e;
+            border: 1px solid rgba(19, 78, 94, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(19, 78, 94, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .legend {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .legend-color {
+            width: 30px;
+            height: 4px;
+            border-radius: 2px;
+        }
+        
+        .legend-label {
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        .info-panel {
+            background: rgba(19, 78, 94, 0.1);
+            padding: 1.2rem;
+            border-radius: 12px;
+            border-left: 4px solid #134e5e;
+        }
+        
+        .info-panel h4 {
+            color: #134e5e;
+            margin-bottom: 0.5rem;
+        }
+        
+        .info-panel p {
+            color: #555;
+            line-height: 1.6;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .controls-panel {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .function-selector {
+                gap: 0.4rem;
+            }
+            
+            .func-btn {
+                padding: 0.5rem 0.8rem;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📈 Visualizador de Derivadas</h1>
+        <p class="subtitle">Observa cómo la tangente cambia mientras el punto se mueve por la curva</p>
+        
+        <div class="function-selector">
+            <button class="func-btn active" data-func="quadratic">x²</button>
+            <button class="func-btn" data-func="cubic">x³</button>
+            <button class="func-btn" data-func="sine">sin(x)</button>
+            <button class="func-btn" data-func="cosine">cos(x)</button>
+            <button class="func-btn" data-func="exp">eˣ</button>
+            <button class="func-btn" data-func="sqrt">√x</button>
+            <button class="func-btn" data-func="log">ln(x)</button>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #134e5e;"></div>
+                <span class="legend-label">f(x) - Función original</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #e74c3c;"></div>
+                <span class="legend-label">Línea tangente</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #71b280;"></div>
+                <span class="legend-label">f'(x) - Derivada</span>
+            </div>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="canvas" width="900" height="500"></canvas>
+        </div>
+        
+        <div class="info-display">
+            <div class="info-box">
+                <h4>📍 Posición</h4>
+                <div class="info-value" id="posX">x = 0.00</div>
+                <div class="info-label">Coordenada X del punto</div>
+            </div>
+            <div class="info-box">
+                <h4>📊 Valor de f(x)</h4>
+                <div class="info-value" id="posY">f(x) = 0.00</div>
+                <div class="info-label">Altura en la curva</div>
+            </div>
+            <div class="info-box">
+                <h4>📐 Pendiente (Derivada)</h4>
+                <div class="info-value" id="slope">f'(x) = 0.00</div>
+                <div class="info-label">Tasa de cambio instantánea</div>
+            </div>
+            <div class="info-box">
+                <h4>🔄 Tendencia</h4>
+                <div class="info-value" id="trend">—</div>
+                <div class="info-label">Creciente / Decreciente</div>
+            </div>
+        </div>
+        
+        <div class="controls-panel">
+            <div class="control-group">
+                <h3>📍 Posición X</h3>
+                <label>Arrastra el slider o el punto en el gráfico</label>
+                <input type="range" id="pointX" min="-4" max="4" step="0.01" value="1">
+                <div class="value-display">Valor: <span id="pointX-value">1.00</span></div>
+            </div>
+            
+            <div class="control-group">
+                <h3>⏱️ Animación</h3>
+                <label>Velocidad del recorrido automático</label>
+                <input type="range" id="animSpeed" min="0" max="2" step="0.1" value="0">
+                <div class="value-display">Valor: <span id="animSpeed-value">0.0</span> (0 = manual)</div>
+            </div>
+            
+            <div class="control-group">
+                <h3>🔍 Zoom</h3>
+                <label>Escala de visualización</label>
+                <input type="range" id="zoom" min="30" max="100" step="5" value="50">
+                <div class="value-display">Valor: <span id="zoom-value">50</span></div>
+            </div>
+            
+            <div class="control-group">
+                <h3>🎨 Visualización</h3>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="showDerivative" checked>
+                    <label for="showDerivative">Mostrar f'(x)</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="showTangent" checked>
+                    <label for="showTangent">Mostrar tangente</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="showGuides" checked>
+                    <label for="showGuides">Mostrar guías</label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            <button class="btn-primary" id="animateBtn">▶ Animar Recorrido</button>
+            <button class="btn-secondary" id="resetBtn">🔄 Centrar</button>
+        </div>
+        
+        <div class="info-panel">
+            <h4>💡 ¿Qué es la Derivada?</h4>
+            <p>
+                La derivada f'(x) representa la <strong>pendiente de la recta tangente</strong> en cada punto de la curva. 
+                Cuando f'(x) > 0, la función crece; cuando f'(x) < 0, decrece. 
+                En los puntos donde f'(x) = 0, la función tiene un máximo o mínimo local.
+                Arrastra el punto por la curva y observa cómo la tangente rota siguiendo el cambio de pendiente.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        class DerivativeVisualizer {
+            constructor() {
+                this.canvas = document.getElementById('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+                
+                // Estado
+                this.pointX = 1;
+                this.funcType = 'quadratic';
+                this.zoom = 50;
+                this.animSpeed = 0;
+                this.showDerivative = true;
+                this.showTangent = true;
+                this.showGuides = true;
+                this.isAnimating = false;
+                this.animationTime = 0;
+                
+                // Arrastre
+                this.isDragging = false;
+                
+                // Configurar eventos
+                this.setupEventListeners();
+                
+                // Iniciar
+                this.animate();
+            }
+            
+            resizeCanvas() {
+                const container = this.canvas.parentElement;
+                this.canvas.width = container.clientWidth;
+                this.canvas.height = 500;
+            }
+            
+            // Funciones matemáticas y sus derivadas
+            getFunction(type) {
+                switch (type) {
+                    case 'quadratic':
+                        return {
+                            name: 'x²',
+                            f: x => x * x,
+                            df: x => 2 * x,
+                            dfName: "2x"
+                        };
+                    case 'cubic':
+                        return {
+                            name: 'x³',
+                            f: x => x * x * x,
+                            df: x => 3 * x * x,
+                            dfName: "3x²"
+                        };
+                    case 'sine':
+                        return {
+                            name: 'sin(x)',
+                            f: x => Math.sin(x),
+                            df: x => Math.cos(x),
+                            dfName: "cos(x)"
+                        };
+                    case 'cosine':
+                        return {
+                            name: 'cos(x)',
+                            f: x => Math.cos(x),
+                            df: x => -Math.sin(x),
+                            dfName: "-sin(x)"
+                        };
+                    case 'exp':
+                        return {
+                            name: 'eˣ',
+                            f: x => Math.exp(x),
+                            df: x => Math.exp(x),
+                            dfName: "eˣ"
+                        };
+                    case 'sqrt':
+                        return {
+                            name: '√x',
+                            f: x => x >= 0 ? Math.sqrt(x) : NaN,
+                            df: x => x > 0 ? 0.5 / Math.sqrt(x) : NaN,
+                            dfName: "1/(2√x)"
+                        };
+                    case 'log':
+                        return {
+                            name: 'ln(x)',
+                            f: x => x > 0 ? Math.log(x) : NaN,
+                            df: x => x > 0 ? 1 / x : NaN,
+                            dfName: "1/x"
+                        };
+                    default:
+                        return this.getFunction('quadratic');
+                }
+            }
+            
+            setupEventListeners() {
+                // Selector de función
+                document.querySelectorAll('.func-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('.func-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        this.funcType = btn.dataset.func;
+                        
+                        // Ajustar rango para funciones que lo requieren
+                        const slider = document.getElementById('pointX');
+                        if (this.funcType === 'sqrt' || this.funcType === 'log') {
+                            slider.min = 0.1;
+                            if (this.pointX < 0.1) {
+                                this.pointX = 0.5;
+                                slider.value = 0.5;
+                            }
+                        } else {
+                            slider.min = -4;
+                        }
+                    });
+                });
+                
+                // Control de posición X
+                document.getElementById('pointX').addEventListener('input', (e) => {
+                    this.pointX = parseFloat(e.target.value);
+                    document.getElementById('pointX-value').textContent = this.pointX.toFixed(2);
+                });
+                
+                // Velocidad de animación
+                document.getElementById('animSpeed').addEventListener('input', (e) => {
+                    this.animSpeed = parseFloat(e.target.value);
+                    document.getElementById('animSpeed-value').textContent = this.animSpeed.toFixed(1);
+                });
+                
+                // Zoom
+                document.getElementById('zoom').addEventListener('input', (e) => {
+                    this.zoom = parseInt(e.target.value);
+                    document.getElementById('zoom-value').textContent = this.zoom;
+                });
+                
+                // Checkboxes
+                document.getElementById('showDerivative').addEventListener('change', (e) => {
+                    this.showDerivative = e.target.checked;
+                });
+                
+                document.getElementById('showTangent').addEventListener('change', (e) => {
+                    this.showTangent = e.target.checked;
+                });
+                
+                document.getElementById('showGuides').addEventListener('change', (e) => {
+                    this.showGuides = e.target.checked;
+                });
+                
+                // Botones
+                document.getElementById('animateBtn').addEventListener('click', () => {
+                    this.isAnimating = !this.isAnimating;
+                    document.getElementById('animateBtn').textContent = 
+                        this.isAnimating ? '⏸ Detener' : '▶ Animar Recorrido';
+                });
+                
+                document.getElementById('resetBtn').addEventListener('click', () => {
+                    this.pointX = 0;
+                    document.getElementById('pointX').value = 0;
+                    document.getElementById('pointX-value').textContent = '0.00';
+                });
+                
+                // Arrastre en el canvas
+                this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+                this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                this.canvas.addEventListener('mouseup', () => this.isDragging = false);
+                this.canvas.addEventListener('mouseleave', () => this.isDragging = false);
+            }
+            
+            getMousePos(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                return {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                };
+            }
+            
+            screenToMath(screenX) {
+                const centerX = this.canvas.width / 2;
+                return (screenX - centerX) / this.zoom;
+            }
+            
+            mathToScreen(mathX, mathY) {
+                const centerX = this.canvas.width / 2;
+                const centerY = this.canvas.height / 2;
+                return {
+                    x: centerX + mathX * this.zoom,
+                    y: centerY - mathY * this.zoom
+                };
+            }
+            
+            handleMouseDown(e) {
+                const pos = this.getMousePos(e);
+                const func = this.getFunction(this.funcType);
+                const pointScreen = this.mathToScreen(this.pointX, func.f(this.pointX));
+                
+                // Verificar si se hizo click cerca del punto
+                const dx = pos.x - pointScreen.x;
+                const dy = pos.y - pointScreen.y;
+                if (Math.sqrt(dx * dx + dy * dy) < 20) {
+                    this.isDragging = true;
+                }
+            }
+            
+            handleMouseMove(e) {
+                if (!this.isDragging) return;
+                
+                const pos = this.getMousePos(e);
+                let newX = this.screenToMath(pos.x);
+                
+                // Limitar según la función
+                const slider = document.getElementById('pointX');
+                const min = parseFloat(slider.min);
+                const max = parseFloat(slider.max);
+                newX = Math.max(min, Math.min(max, newX));
+                
+                this.pointX = newX;
+                slider.value = newX;
+                document.getElementById('pointX-value').textContent = newX.toFixed(2);
+            }
+            
+            drawGrid() {
+                const ctx = this.ctx;
+                const width = this.canvas.width;
+                const height = this.canvas.height;
+                const centerX = width / 2;
+                const centerY = height / 2;
+                
+                // Líneas de cuadrícula
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.05)';
+                ctx.lineWidth = 1;
+                
+                // Verticales
+                for (let x = centerX % this.zoom; x < width; x += this.zoom) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, height);
+                    ctx.stroke();
+                }
+                
+                // Horizontales
+                for (let y = centerY % this.zoom; y < height; y += this.zoom) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
+                    ctx.stroke();
+                }
+                
+                // Ejes principales
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.lineWidth = 2;
+                
+                // Eje X
+                ctx.beginPath();
+                ctx.moveTo(0, centerY);
+                ctx.lineTo(width, centerY);
+                ctx.stroke();
+                
+                // Eje Y
+                ctx.beginPath();
+                ctx.moveTo(centerX, 0);
+                ctx.lineTo(centerX, height);
+                ctx.stroke();
+                
+                // Etiquetas de ejes
+                ctx.fillStyle = '#666';
+                ctx.font = '12px Inter';
+                ctx.fillText('x', width - 20, centerY + 20);
+                ctx.fillText('y', centerX + 10, 20);
+                
+                // Números en los ejes
+                ctx.fillStyle = '#999';
+                ctx.font = '10px Inter';
+                for (let i = -10; i <= 10; i++) {
+                    if (i !== 0) {
+                        const xPos = centerX + i * this.zoom;
+                        const yPos = centerY + i * this.zoom;
+                        
+                        if (xPos > 0 && xPos < width) {
+                            ctx.fillText(i.toString(), xPos - 5, centerY + 15);
+                        }
+                        if (yPos > 0 && yPos < height) {
+                            ctx.fillText((-i).toString(), centerX + 5, yPos + 3);
+                        }
+                    }
+                }
+            }
+            
+            drawFunction() {
+                const ctx = this.ctx;
+                const width = this.canvas.width;
+                const func = this.getFunction(this.funcType);
+                
+                // Dibujar función original f(x)
+                ctx.beginPath();
+                ctx.strokeStyle = '#134e5e';
+                ctx.lineWidth = 3;
+                
+                let started = false;
+                for (let screenX = 0; screenX < width; screenX++) {
+                    const mathX = this.screenToMath(screenX);
+                    const y = func.f(mathX);
+                    
+                    if (!isNaN(y) && isFinite(y)) {
+                        const screen = this.mathToScreen(mathX, y);
+                        if (!started) {
+                            ctx.moveTo(screen.x, screen.y);
+                            started = true;
+                        } else {
+                            ctx.lineTo(screen.x, screen.y);
+                        }
+                    }
+                }
+                ctx.stroke();
+                
+                // Dibujar derivada f'(x)
+                if (this.showDerivative) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#71b280';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    
+                    started = false;
+                    for (let screenX = 0; screenX < width; screenX++) {
+                        const mathX = this.screenToMath(screenX);
+                        const dy = func.df(mathX);
+                        
+                        if (!isNaN(dy) && isFinite(dy)) {
+                            const screen = this.mathToScreen(mathX, dy);
+                            if (!started) {
+                                ctx.moveTo(screen.x, screen.y);
+                                started = true;
+                            } else {
+                                ctx.lineTo(screen.x, screen.y);
+                            }
+                        }
+                    }
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }
+            
+            drawTangentLine() {
+                if (!this.showTangent) return;
+                
+                const ctx = this.ctx;
+                const func = this.getFunction(this.funcType);
+                const x = this.pointX;
+                const y = func.f(x);
+                const slope = func.df(x);
+                
+                if (isNaN(y) || isNaN(slope) || !isFinite(slope)) return;
+                
+                // Dibujar línea tangente extendida
+                const lineLength = 5; // En unidades matemáticas
+                const x1 = x - lineLength;
+                const y1 = y - slope * lineLength;
+                const x2 = x + lineLength;
+                const y2 = y + slope * lineLength;
+                
+                const screen1 = this.mathToScreen(x1, y1);
+                const screen2 = this.mathToScreen(x2, y2);
+                
+                ctx.beginPath();
+                ctx.moveTo(screen1.x, screen1.y);
+                ctx.lineTo(screen2.x, screen2.y);
+                ctx.strokeStyle = '#e74c3c';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+            
+            drawPoint() {
+                const ctx = this.ctx;
+                const func = this.getFunction(this.funcType);
+                const x = this.pointX;
+                const y = func.f(x);
+                const slope = func.df(x);
+                
+                if (isNaN(y)) return;
+                
+                const screen = this.mathToScreen(x, y);
+                
+                // Líneas guía
+                if (this.showGuides) {
+                    const centerY = this.canvas.height / 2;
+                    const centerX = this.canvas.width / 2;
+                    
+                    ctx.beginPath();
+                    ctx.setLineDash([3, 3]);
+                    ctx.strokeStyle = 'rgba(231, 76, 60, 0.4)';
+                    ctx.lineWidth = 1;
+                    
+                    // Línea vertical al eje X
+                    ctx.moveTo(screen.x, centerY);
+                    ctx.lineTo(screen.x, screen.y);
+                    ctx.stroke();
+                    
+                    // Línea horizontal al eje Y
+                    ctx.moveTo(centerX, screen.y);
+                    ctx.lineTo(screen.x, screen.y);
+                    ctx.stroke();
+                    
+                    ctx.setLineDash([]);
+                }
+                
+                // Punto en f(x)
+                ctx.beginPath();
+                ctx.arc(screen.x, screen.y, 8, 0, Math.PI * 2);
+                ctx.fillStyle = '#e74c3c';
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Efecto de brillo
+                const gradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, 15);
+                gradient.addColorStop(0, 'rgba(231, 76, 60, 0.4)');
+                gradient.addColorStop(1, 'transparent');
+                ctx.beginPath();
+                ctx.arc(screen.x, screen.y, 15, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                
+                // Punto correspondiente en f'(x)
+                if (this.showDerivative && !isNaN(slope) && isFinite(slope)) {
+                    const derivScreen = this.mathToScreen(x, slope);
+                    
+                    ctx.beginPath();
+                    ctx.arc(derivScreen.x, derivScreen.y, 6, 0, Math.PI * 2);
+                    ctx.fillStyle = '#71b280';
+                    ctx.fill();
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            }
+            
+            updateInfo() {
+                const func = this.getFunction(this.funcType);
+                const x = this.pointX;
+                const y = func.f(x);
+                const slope = func.df(x);
+                
+                document.getElementById('posX').textContent = `x = ${x.toFixed(2)}`;
+                document.getElementById('posY').textContent = `f(x) = ${isNaN(y) ? 'N/A' : y.toFixed(2)}`;
+                document.getElementById('slope').textContent = `f'(x) = ${isNaN(slope) || !isFinite(slope) ? 'N/A' : slope.toFixed(2)}`;
+                
+                // Tendencia
+                let trend = '—';
+                if (!isNaN(slope) && isFinite(slope)) {
+                    if (Math.abs(slope) < 0.01) {
+                        trend = '⚪ Punto crítico';
+                    } else if (slope > 0) {
+                        trend = '📈 Creciente';
+                    } else {
+                        trend = '📉 Decreciente';
+                    }
+                }
+                document.getElementById('trend').textContent = trend;
+            }
+            
+            draw() {
+                const ctx = this.ctx;
+                
+                // Limpiar
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Dibujar componentes
+                this.drawGrid();
+                this.drawFunction();
+                this.drawTangentLine();
+                this.drawPoint();
+                
+                // Actualizar info
+                this.updateInfo();
+            }
+            
+            animate() {
+                // Animación automática
+                if (this.isAnimating && this.animSpeed > 0) {
+                    this.animationTime += 0.02 * this.animSpeed;
+                    
+                    const slider = document.getElementById('pointX');
+                    const min = parseFloat(slider.min);
+                    const max = parseFloat(slider.max);
+                    
+                    // Movimiento sinusoidal entre min y max
+                    this.pointX = min + (max - min) * (0.5 + 0.5 * Math.sin(this.animationTime));
+                    slider.value = this.pointX;
+                    document.getElementById('pointX-value').textContent = this.pointX.toFixed(2);
+                }
+                
+                this.draw();
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+        
+        // Inicializar cuando se carga la página
+        window.addEventListener('DOMContentLoaded', () => {
+            new DerivativeVisualizer();
+        });
+    </script>
+</body>
+</html>
+
+
+
